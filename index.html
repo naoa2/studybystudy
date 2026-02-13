@@ -3,187 +3,252 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Academic Math Tool - Ver 9.5</title>
-    <!-- CSSはあえて標準タグで。Tailwindの読み込みを待たずに表示・反応させます -->
+    <title>Global Mathematics Resource - Scientific Tool</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net"></script>
     <style>
         @import url('https://fonts.googleapis.com');
-        body { font-family: sans-serif; margin: 0; background: #f3f4f6; }
-        .screen { display: none; min-height: 100vh; width: 100%; flex-direction: column; align-items: center; justify-content: center; position: fixed; top:0; left:0; }
+        
+        body { font-family: 'Noto Serif JP', serif; margin: 0; background: #f0f2f5; overflow: hidden; user-select: none; }
+        .screen { display: none; min-height: 100vh; width: 100%; flex-direction: column; align-items: center; justify-content: center; position: fixed; top:0; left:0; z-index: 10; }
         .screen.active { display: flex !important; }
-        
-        /* 電卓: 100%反応するボタン */
-        .calc-box { background: white; padding: 20px; border-radius: 15px; border: 1px solid #ccc; width: 300px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-        .calc-disp { background: #222; color: #0f0; text-align: right; padding: 15px; font-size: 2rem; border-radius: 5px; margin-bottom: 15px; height: 60px; display: flex; align-items: center; justify-content: flex-end; font-family: monospace; }
-        .calc-grid { display: grid; grid-template-cols: repeat(4, 1fr); gap: 8px; }
-        .c-btn { height: 50px; border: 1px solid #ddd; background: #fff; font-size: 1.2rem; cursor: pointer; border-radius: 5px; outline: none; }
-        
-        /* 押した時の反応を強制 */
-        .c-btn:active, .gold-btn:active { transform: scale(0.9) !important; background: #bbb !important; }
 
-        /* ゴージャスデザイン */
-        .lounge { background: #000; color: #d4af37; }
-        .gold-btn { background: linear-gradient(135deg, #bf953f, #aa771c); color: #000; font-weight: bold; border: none; border-radius: 4px; padding: 15px; cursor: pointer; }
-        .post-card { background: #111; border: 1px solid #333; padding: 15px; margin-bottom: 15px; border-left: 4px solid #aa771c; width: 90%; }
-        input, textarea { background: #222; color: #fff; border: 1px solid #444; padding: 10px; width: 80%; }
+        /* 偽装電卓UI */
+        .calc-body { background: #ffffff; padding: 25px; border-radius: 24px; box-shadow: 0 15px 45px rgba(0,0,0,0.1); width: 330px; border: 1px solid #e5e7eb; }
+        .calc-disp { background: #111827; color: #10b981; font-family: 'Space Mono', monospace; text-align: right; padding: 20px; font-size: 2.2rem; border-radius: 12px; margin-bottom: 20px; height: 85px; display: flex; align-items: center; justify-content: flex-end; box-shadow: inset 0 2px 8px rgba(0,0,0,0.5); }
+        .c-btn { background: #f9fafb; border: 1px solid #e5e7eb; height: 55px; font-size: 1.3rem; border-radius: 10px; cursor: pointer; transition: 0.1s; display: flex; align-items: center; justify-content: center; font-family: sans-serif; font-weight: 600; }
+        .c-btn:active { transform: scale(0.92) !important; background: #e5e7eb !important; }
+        .c-btn.op { color: #2563eb; background: #eff6ff; }
+        .c-btn.eq { background: #2563eb; color: white; border: none; }
+
+        /* ゴージャス掲示板UI */
+        .lounge { background: #050505; color: #d4af37; }
+        .gold-text { background: linear-gradient(to right, #bf953f, #fcf6ba, #aa771c, #fcf6ba); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-family: 'Cinzel'; }
+        .gold-border { border: 1px solid #aa771c; }
+        .gold-btn { background: linear-gradient(135deg, #bf953f, #aa771c); color: #000; font-weight: 900; border: none; cursor: pointer; }
+        
+        .post-card { background: rgba(15,15,15,1); border: 1px solid #2d2410; padding: 25px; margin-bottom: 30px; border-left: 5px solid #d4af37; box-shadow: 0 10px 40px rgba(0,0,0,0.6); position: relative; }
+        .post-card::after { content: ""; position: absolute; bottom: 0; left: 0; width: 100%; height: 1px; background: linear-gradient(90deg, transparent, #444, transparent); }
+
+        input, textarea { background: #000 !important; color: #fff !important; border: 1px solid #333 !important; padding: 15px !important; outline: none !important; border-radius: 0 !important; width: 100%; }
+        input:focus, textarea:focus { border-color: #d4af37 !important; }
+        
+        /* BAN画面 */
+        .ban-scr { background: black; color: #ff0000; text-align: center; }
     </style>
-    <!-- ライブラリは後回し -->
-    <script src="https://cdn.jsdelivr.net"></script>
 </head>
 <body>
 
-    <!-- [1] 電卓 -->
+    <!-- [SCREEN: TERMINATED] -->
+    <div id="sc-ban" class="screen ban-scr p-10">
+        <h1 class="text-6xl font-black mb-8 italic tracking-tighter uppercase">TERMINATED</h1>
+        <p class="font-mono text-sm opacity-50 underline tracking-[0.5em] mb-10">System Access Denied.</p>
+        <div class="border border-red-950 p-4 bg-red-950/10 text-xs">SECURITY ALERT: Node blacklisted by overseer. Severed connection.</div>
+    </div>
+
+    <!-- [SCREEN 1: CALCULATOR] -->
     <div id="sc-1" class="screen active">
-        <div class="calc-box">
-            <div id="c-disp" class="calc-disp">0</div>
-            <div class="calc-grid">
-                <button class="c-btn" style="grid-column: span 3; color: red;" onclick="calc('C')">AC</button>
-                <button class="c-btn" onclick="calc('/')">÷</button>
-                <button class="c-btn" onclick="calc('7')">7</button><button class="c-btn" onclick="calc('8')">8</button><button class="c-btn" onclick="calc('9')">9</button><button class="c-btn" onclick="calc('*')">×</button>
-                <button class="c-btn" onclick="calc('4')">4</button><button class="calc-btn" onclick="calc('5')">5</button><button class="c-btn" onclick="calc('6')">6</button><button class="c-btn" onclick="calc('-')">-</button>
-                <button class="c-btn" onclick="calc('1')">1</button><button class="c-btn" onclick="calc('2')">2</button><button class="c-btn" onclick="calc('3')">3</button><button class="c-btn" onclick="calc('+')">+</button>
-                <button class="c-btn" style="grid-column: span 2;" onclick="calc('0')">0</button><button class="c-btn" onclick="calc('.')">.</button>
-                <button class="c-btn" style="background: #007bff; color: white;" onclick="calc('=')">=</button>
+        <div class="calc-body calc-box calc-body">
+            <div class="calc-body calc-container calc-box">
+                <div class="calc-body calc-box">
+                    <div class="calc-body calc-box">
+                        <div class="calc-body calc-box shadow-2xl">
+                            <div class="text-[9px] text-gray-400 font-bold mb-3 uppercase tracking-widest text-center border-b pb-1">Academic Learning Engine v10.0</div>
+                            <div id="c-disp" class="calc-disp">0</div>
+                            <div class="grid grid-cols-4 gap-2">
+                                <button class="c-btn op col-span-3 text-red-500" onclick="calc('AC')">AC</button><button class="c-btn op" onclick="calc('/')">÷</button>
+                                <button class="c-btn" onclick="calc('7')">7</button><button class="c-btn" onclick="calc('8')">8</button><button class="c-btn" onclick="calc('9')">9</button><button class="c-btn op" onclick="calc('*')">×</button>
+                                <button class="c-btn" onclick="calc('4')">4</button><button class="c-btn" onclick="calc('5')">5</button><button class="c-btn" onclick="calc('6')">6</button><button class="c-btn op" onclick="calc('-')">-</button>
+                                <button class="c-btn" onclick="calc('1')">1</button><button class="c-btn" onclick="calc('2')">2</button><button class="c-btn" onclick="calc('3')">3</button><button class="c-btn op" onclick="calc('+')">+</button>
+                                <button class="c-btn col-span-2" onclick="calc('0')">0</button><button class="c-btn" onclick="calc('.')">.</button><button class="c-btn eq font-bold" onclick="calc('=')">=</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
+        <p class="mt-10 text-gray-400 text-[10px] uppercase tracking-[0.5em]">Licensed for Education District 01</p>
     </div>
 
-    <!-- [2] 秘密パスワード -->
+    <!-- [SCREEN 2: SECRET PASS] -->
     <div id="sc-2" class="screen lounge">
-        <h2 style="font-family:'Cinzel'">PRIVATE KEY</h2>
-        <input type="password" id="in-neba" placeholder="••••">
-        <br>
-        <button class="gold-btn" onclick="checkNeba()" style="width: 200px;">UNLOCK</button>
-    </div>
-
-    <!-- [3] アカウント作成 -->
-    <div id="sc-3" class="screen lounge">
-        <h2 style="font-family:'Cinzel'">REGISTRY</h2>
-        <input type="text" id="in-name" placeholder="Nickname">
-        <br>
-        <button class="gold-btn" onclick="reg()" style="width: 200px;">JOIN</button>
-    </div>
-
-    <!-- [4] 掲示板 -->
-    <div id="sc-4" class="screen lounge" style="justify-start: flex-start; overflow-y: auto; padding-top: 80px;">
-        <div style="position: fixed; top: 0; width: 100%; background: #000; padding: 20px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; z-index: 100;">
-            <span onclick="nav(5)" style="cursor: pointer; font-family:'Cinzel'; font-size: 1.5rem;">THE LOUNGE</span>
-            <span id="u-badge" style="font-size: 10px; border: 1px solid #aa771c; padding: 2px 10px;"></span>
+        <div class="w-full max-w-sm p-12 border-2 border-[#aa771c] text-center bg-black shadow-2xl">
+            <h2 class="gold-text text-xl mb-12 tracking-[0.4em] font-black italic">Key Required</h2>
+            <input type="password" id="pw-neba" class="w-full text-center text-4xl mb-12 border-b border-[#aa771c] bg-transparent py-2" placeholder="••••">
+            <button onclick="checkNeba()" class="w-full gold-btn py-5 shadow-2xl text-lg tracking-widest">AUTHENTICATE</button>
         </div>
-        <div id="feed" style="width: 100%; max-width: 600px; padding-bottom: 200px;"></div>
-        <div style="position: fixed; bottom: 0; width: 100%; background: rgba(0,0,0,0.9); padding: 20px; border-top: 1px solid #aa771c;">
-            <textarea id="msg" placeholder="思考を綴る..." style="width: 90%; height: 50px;"></textarea><br>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; width: 90%; margin-left: 5%;">
-                <input type="file" id="img" style="width: 50%; font-size: 10px;">
-                <button class="gold-btn" onclick="post()" style="padding: 5px 20px;">SEND</button>
+    </div>
+
+    <!-- [SCREEN 3: REGISTRY] -->
+    <div id="sc-3" class="screen lounge">
+        <div class="w-full max-w-sm p-12 text-center">
+            <h2 class="gold-text text-4xl mb-8 italic">Registry</h2>
+            <p class="text-zinc-600 mb-10 text-xs uppercase tracking-widest">称号をデータベースに登録せよ</p>
+            <input type="text" id="reg-name" class="w-full text-center text-xl mb-12 gold-border p-5" placeholder="Nickname">
+            <button onclick="doReg()" class="w-full gold-btn py-5">JOIN THE LOUNGE</button>
+        </div>
+    </div>
+
+    <!-- [SCREEN 4: BBS] -->
+    <div id="sc-4" class="screen lounge justify-start overflow-y-auto pt-28">
+        <header class="w-full bg-black/95 border-b border-zinc-900 px-10 py-6 flex justify-between items-center fixed top-0 z-50 backdrop-blur-md">
+            <h1 onclick="goAdminAuth()" class="gold-text text-3xl font-black italic cursor-pointer select-none tracking-tighter">THE LOUNGE</h1>
+            <span id="u-badge" class="text-[9px] gold-text border border-[#aa771c] px-4 py-1.5 uppercase tracking-widest bg-black"></span>
+        </header>
+        <main id="feed" class="flex-grow p-10 max-w-4xl mx-auto w-full space-y-12 pb-80"></main>
+        <div class="fixed bottom-0 w-full p-8 bg-gradient-to-t from-black via-black/90 to-transparent">
+            <div class="max-w-4xl mx-auto bg-[#0a0a0a] p-8 gold-border shadow-2xl relative">
+                <textarea id="msg" class="w-full h-24 mb-6 p-4 text-lg" placeholder="思考を同期する..."></textarea>
+                <div class="flex justify-between items-center">
+                    <label class="text-[10px] gold-text font-bold cursor-pointer border border-[#3d3420] px-6 py-3 hover:bg-[#111] transition-all">
+                        📎 ATTACH_MEDIA
+                        <input type="file" id="img" accept="image/*" class="hidden">
+                    </label>
+                    <button onclick="post()" class="gold-btn px-16 py-3 shadow-xl shadow-gold/20">SYNCHRONIZE</button>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- [5] 管理ログイン -->
+    <!-- [SCREEN 5: ADMIN AUTH] -->
     <div id="sc-5" class="screen lounge">
-        <h2 style="color: red;">ADMIN AUTH</h2>
-        <input type="password" id="in-admin" placeholder="••••••••">
-        <br>
-        <button class="gold-btn" onclick="checkAdmin()" style="background: red; color: white;">LOGIN</button>
+        <div class="w-full max-w-sm p-12 border-4 border-red-900/50 bg-black text-center shadow-2xl">
+            <h2 class="text-red-600 text-2xl font-black mb-10 tracking-widest uppercase">Overseer</h2>
+            <input type="password" id="pw-admin" class="w-full bg-black border-2 border-red-900 p-4 text-red-600 text-center text-2xl mb-10 outline-none" placeholder="••••••••">
+            <button onclick="checkAdmin()" class="w-full bg-red-900 text-white py-5 font-black tracking-widest hover:bg-red-800 transition-all">GRANT ACCESS</button>
+            <button onclick="nav(4)" class="mt-6 text-zinc-700 text-xs hover:underline">Return</button>
+        </div>
     </div>
 
-    <!-- [6] 管理画面 -->
-    <div id="sc-6" class="screen lounge" style="justify-content: flex-start; padding-top: 50px;">
-        <h2>CONSOLE</h2>
-        <div id="adm-p" style="width: 90%; font-size: 10px;"></div>
-        <button class="gold-btn" onclick="nav(4)" style="margin-top: 20px;">EXIT</button>
-    </div>
-
-    <!-- [BAN] -->
-    <div id="sc-ban" class="screen" style="background: #000; color: red;">
-        <h1>TERMINATED</h1>
+    <!-- [SCREEN 6: ADMIN CONSOLE] -->
+    <div id="sc-6" class="screen lounge justify-start p-12 pt-28 overflow-y-auto">
+        <div class="w-full max-w-6xl mx-auto">
+            <div class="flex justify-between border-b border-zinc-800 pb-8 mb-12">
+                <h2 class="gold-text text-3xl font-black italic tracking-widest">Overseer Console</h2>
+                <button onclick="nav(4)" class="text-xs gold-text border border-zinc-800 px-6 py-2">EXIT</button>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 font-mono text-[11px]">
+                <div><h3 class="text-[#aa771c] mb-6 underline uppercase tracking-widest">Feed Purge</h3><div id="adm-p" class="space-y-3"></div></div>
+                <div><h3 class="text-[#aa771c] mb-6 underline uppercase tracking-widest">Node Control</h3><div id="adm-u" class="space-y-3"></div></div>
+            </div>
+        </div>
     </div>
 
     <script>
-        // 設定
+        // --- ⚙️ SUPABASE CONFIG (REAL-TIME ENABLED) ---
         const URL = "https://ouwdksthlsouvlkqxfqh.supabase.co";
         const KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im91d2Rrc3RobHNvdXZsa3F4ZnFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA5MjA1OTMsImV4cCI6MjA4NjQ5NjU5M30.3RfDDpqJ1bweEtcFO9IZtAeGVWEAwEo-tTH534wDlbk";
-        let sb;
-        try { sb = window.supabase.createClient(URL, KEY); } catch(e) {}
+        const sb = window.supabase.createClient(URL, KEY);
 
         let me = localStorage.getItem('g_me') || "";
         let cVal = "";
 
-        // 画面遷移（最優先、絶対に動く）
-        function nav(n) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById('sc-' + n).classList.add('active');
-            if(n === 4) { document.getElementById('u-badge').innerText = me; getPosts(); }
-            if(n === 6) getAdmin();
+        // --- 🛡️ BAN CHECK SYSTEM ---
+        async function checkBan() {
+            if (!me) return false;
+            // postsテーブル内で[BAN_FLAG]を持つ特殊なレコードを探す
+            const { data } = await sb.from('posts').select('*').eq('content', '[TERMINATED_USER]').eq('user', me);
+            if (data && data.length > 0) { nav('ban'); return true; }
+            return false;
         }
 
-        // 電卓
+        // --- 📱 NAVIGATION ---
+        function nav(n) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            const target = document.getElementById('sc-' + n);
+            if(target) target.classList.add('active');
+            if(n === 4) { document.getElementById('u-badge').innerText = me; listenPosts(); }
+            if(n === 6) renderAdmin();
+            window.scrollTo(0,0);
+        }
+
+        // --- 🧮 CALC ENGINE (PHYSICAL RESPONSE GUARANTEED) ---
         function calc(v) {
             const d = document.getElementById('c-disp');
-            if(v === 'C') cVal = "";
+            if(v === 'AC') cVal = "";
             else if(v === '=') {
-                if(cVal === "777") { cVal = ""; nav(2); return; }
+                if(cVal === "777") { cVal = ""; d.innerText = "0"; nav(2); return; }
                 try { cVal = eval(cVal.replace('÷','/').replace('×','*')).toString(); } catch(e) { cVal = "Error"; }
             } else { cVal += v; }
             d.innerText = cVal || "0";
         }
 
-        function checkNeba() {
-            if(document.getElementById('in-neba').value === 'neba72') {
+        // --- 🔑 AUTH FLOW ---
+        async function checkNeba() {
+            if(document.getElementById('pw-neba').value === 'neba72') {
+                if (await checkBan()) return;
                 if(me) nav(4); else nav(3);
-            }
+            } else { alert("ACCESS DENIED: Authentication Token Invalid."); }
         }
 
-        function reg() {
-            const n = document.getElementById('in-name').value.trim();
+        function doReg() {
+            const n = document.getElementById('reg-name').value.trim();
             if(n) { me = n; localStorage.setItem('g_me', n); nav(4); }
         }
 
+        // --- 🥂 BBS LOGIC ---
         async function post() {
             const t = document.getElementById('msg').value;
-            const f = document.getElementById('img').files[0];
+            const f = document.getElementById('img').files;
             let b64 = "";
-            if(f) b64 = await new Promise(r => { const rd = new FileReader(); rd.onload = () => r(rd.result); rd.readAsDataURL(f); });
+            if(f && f[0]) b64 = await new Promise(r => { const rd = new FileReader(); rd.onload = () => r(rd.result); rd.readAsDataURL(f[0]); });
             
-            await sb.from('posts').insert([{ user: me, content: t, image: b64 }]);
-            document.getElementById('msg').value = "";
-            getPosts();
+            if(t || b64) {
+                const { error } = await sb.from('posts').insert([{ user: me, content: t, image: b64 }]);
+                if(!error) { document.getElementById('msg').value = ""; document.getElementById('img').value = ""; listenPosts(); }
+                else { alert("SYNC_ERROR: Check RLS configuration."); }
+            }
         }
 
-        async function getPosts() {
-            const { data } = await sb.from('posts').select('*').neq('content', '[BAN]').order('created_at', { ascending: false });
+        async function listenPosts() {
+            const { data } = await sb.from('posts').select('*').neq('content', '[TERMINATED_USER]').order('created_at', { ascending: false });
             if(!data) return;
             document.getElementById('feed').innerHTML = data.map(p => `
                 <div class="post-card">
-                    <div style="font-size: 10px; color: #aa771c; margin-bottom: 5px;">${p.user}</div>
-                    <div style="color: #ccc; font-size: 14px;">${p.content || ""}</div>
-                    ${p.image ? `<img src="${p.image}" style="width: 100%; margin-top: 10px; border: 1px solid #333;">` : ''}
+                    <div class="flex justify-between items-center mb-6">
+                        <span class="gold-text text-sm font-black uppercase italic tracking-widest">${p.user}</span>
+                        <span class="text-[9px] text-zinc-700 font-bold font-mono">${new Date(p.created_at).toLocaleString()}</span>
+                    </div>
+                    <p class="text-zinc-300 text-lg leading-relaxed font-light mb-6 whitespace-pre-wrap">${p.content || ""}</p>
+                    ${p.image ? `<img src="${p.image}" class="w-full border border-zinc-900 shadow-2xl">` : ''}
                 </div>`).join('');
         }
 
-        function checkAdmin() {
-            if(document.getElementById('in-admin').value === 'e9271324') nav(6);
-        }
+        // --- 👑 ADMIN SYSTEM ---
+        function goAdminAuth() { nav(5); }
+        function checkAdmin() { if(document.getElementById('pw-admin').value === 'e9271324') nav(6); else alert("UNAUTHORIZED"); }
 
-        async function getAdmin() {
+        async function renderAdmin() {
             const { data } = await sb.from('posts').select('*').order('created_at', { ascending: false });
             if(!data) return;
-            document.getElementById('adm-p').innerHTML = data.map(p => `
-                <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding: 5px;">
-                    <span>${p.user}: ${p.content ? p.content.slice(0,10) : "IMG"}</span>
-                    <div style="display:flex; gap:10px;">
-                        <button onclick="delP(${p.id})" style="color:red; background:none; border:none; cursor:pointer;">[消去]</button>
-                        <button onclick="banU('${p.user}')" style="color:orange; background:none; border:none; cursor:pointer;">[BAN]</button>
-                    </div>
+            
+            // 投稿管理
+            document.getElementById('adm-p').innerHTML = data.filter(p=>p.content !== '[TERMINATED_USER]').map(p => `
+                <div class="bg-zinc-950 p-4 flex justify-between border border-zinc-900 items-center">
+                    <span class="truncate max-w-[200px] text-zinc-500">${p.user}: ${p.content ? p.content.slice(0,20) : "IMG"}</span>
+                    <button onclick="delP(${p.id})" class="text-red-700 font-bold border border-red-900 px-4 py-1 hover:bg-red-900 hover:text-white transition-all">PURGE</button>
+                </div>`).join('');
+            
+            // ユーザー管理
+            const uniqueUsers = [...new Set(data.map(p => p.user))];
+            document.getElementById('adm-u').innerHTML = uniqueUsers.map(u => `
+                <div class="bg-zinc-950 p-4 flex justify-between border border-zinc-900 items-center">
+                    <span class="gold-text italic font-bold text-sm underline">${u}</span>
+                    <button onclick="banU('${u}')" class="text-red-700 font-bold border border-red-900 px-4 py-1 hover:bg-red-900 hover:text-white uppercase">Terminate Access</button>
                 </div>`).join('');
         }
 
-        window.delP = async (id) => { await sb.from('posts').delete().eq('id', id); getAdmin(); getPosts(); };
+        window.delP = async (id) => { if(confirm("抹消しますか？")) { await sb.from('posts').delete().eq('id', id); renderAdmin(); listenPosts(); }};
         window.banU = async (u) => { 
-            await sb.from('posts').insert([{ user: u, content: '[BAN]' }]); 
-            await sb.from('posts').delete().eq('user', u).neq('content', '[BAN]');
-            alert(u + " を追放しました。"); getAdmin();
+            if(confirm(u + " を永久追放しますか？")) { 
+                await sb.from('posts').insert([{ user: u, content: '[TERMINATED_USER]' }]); 
+                await sb.from('posts').delete().eq('user', u).neq('content', '[TERMINATED_USER]');
+                alert(u + " was terminated."); renderAdmin(); 
+            }
         };
+
+        // 初期ロード時にBANチェック
+        checkBan();
     </script>
 </body>
 </html>
