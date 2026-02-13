@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academic Math Engine - Standard Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net"></script>
+    <style>
+        @import url('https://fonts.googleapis.com');
+        
+        :root { --gold: #d4af37; --gold-dark: #aa771c; }
+        body { font-family: 'Noto Serif JP', serif; margin: 0; background: #f3f4f6; overflow-x: hidden; user-select: none; }
+        
+        .screen { display: none; min-height: 100vh; width: 100%; flex-direction: column; align-items: center; justify-content: center; position: fixed; top: 0; left: 0; }
+        .screen.active { display: flex !important; }
+
+        /* 電卓 (偽装) */
+        .calc-box { background: white; padding: 30px; border-radius: 24px; box-shadow: 0 15px 40px rgba(0,0,0,0.1); width: 340px; border: 1px solid #e5e7eb; }
+        .calc-display { background: #111; color: #10b981; font-family: monospace; text-align: right; padding: 20px; font-size: 2.5rem; border-radius: 12px; margin-bottom: 20px; min-height: 90px; }
+        .calc-grid { display: grid; grid-template-cols: repeat(4, 1fr); gap: 12px; }
+        .c-btn { background: #f9fafb; border: 1px solid #eee; border-radius: 12px; height: 60px; font-size: 1.3rem; font-weight: 600; cursor: pointer; transition: 0.1s; display: flex; align-items: center; justify-content: center; }
+        .c-btn:active { background: #e5e7eb; transform: scale(0.92); }
+        .c-btn.op { color: #2563eb; background: #eff6ff; }
+        .c-btn.eq { background: #2563eb; color: white; border: none; }
+
+        /* ゴージャス掲示板 */
+        .lounge { background: #050505; color: var(--gold); }
+        .gold-text { background: linear-gradient(to right, #bf953f, #fcf6ba, #aa771c, #fcf6ba); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-family: 'Cinzel', serif; }
+        .gold-border { border: 1px solid var(--gold-dark); }
+        .gold-btn { background: linear-gradient(135deg, #bf953f, #aa771c); color: black; font-weight: 900; letter-spacing: 2px; cursor: pointer; border: none; }
+        .gold-btn:active { transform: scale(0.96); filter: brightness(1.2); }
+        
+        .post-card { background: #0a0a0a; border: 1px solid #2d2410; padding: 30px; margin-bottom: 40px; border-left: 5px solid var(--gold); box-shadow: 0 10px 40px rgba(0,0,0,0.6); }
+        input, textarea { background: #000 !important; color: #fff !important; border: 1px solid #333 !important; padding: 15px !important; outline: none !important; width: 100%; }
+        input:focus { border-color: var(--gold) !important; }
+
+        .ban-scr { background: black; color: red; font-family: monospace; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <!-- [SCREEN] BANアクセス拒否 -->
+    <div id="scr-ban" class="screen ban-scr">
+        <h1 class="text-6xl font-black mb-10 tracking-tighter uppercase">Terminated</h1>
+        <p class="border border-red-900 p-4 bg-red-950/20 max-w-sm mx-auto opacity-70">Node blacklisted by overseer. Severed connection.</p>
+    </div>
+
+    <!-- [SCREEN 1] 学習用計算機 -->
+    <div id="scr-1" class="screen active">
+        <div class="calc-box">
+            <div class="text-[10px] text-gray-400 font-bold mb-3 uppercase tracking-widest text-center">Scientific Math Engine v9.0.4</div>
+            <div id="calc-disp" class="calc-display">0</div>
+            <div class="calc-grid">
+                <button class="c-btn op col-span-3 text-red-500" data-val="C">AC</button>
+                <button class="c-btn op" data-val="/">÷</button>
+                <button class="c-btn" data-val="7">7</button><button class="c-btn" data-val="8">8</button><button class="c-btn" data-val="9">9</button>
+                <button class="c-btn op" data-val="*">×</button>
+                <button class="c-btn" data-val="4">4</button><button class="c-btn" data-val="5">5</button><button class="c-btn" data-val="6">6</button>
+                <button class="c-btn op" data-val="-">-</button>
+                <button class="c-btn" data-val="1">1</button><button class="c-btn" data-val="2">2</button><button class="c-btn" data-val="3">3</button>
+                <button class="c-btn op" data-val="+">+</button>
+                <button class="c-btn col-span-2" data-val="0">0</button>
+                <button class="c-btn" data-val=".">.</button>
+                <button class="c-btn eq" data-val="=">=</button>
+            </div>
+        </div>
+        <p class="mt-10 text-gray-400 text-[10px] uppercase tracking-[0.5em]">Education System Sync Active</p>
+    </div>
+
+    <!-- [SCREEN 2] 秘密コード入力 (neba72) -->
+    <div id="scr-2" class="screen lounge">
+        <div class="w-full max-w-sm p-12 gold-border text-center bg-black relative">
+            <h2 class="gold-text text-2xl font-black mb-12 tracking-[0.5em] uppercase italic">Auth Required</h2>
+            <input type="password" id="pw-neba" class="w-full text-center text-4xl mb-12 border-b border-gold py-2" placeholder="••••">
+            <button id="auth-btn-neba" class="w-full gold-btn py-5 text-xl tracking-[0.2em]">UNLOCK SYSTEM</button>
+        </div>
+    </div>
+
+    <!-- [SCREEN 3] アカウント作成 -->
+    <div id="scr-3" class="screen lounge">
+        <div class="w-full max-w-sm p-12 text-center bg-black">
+            <h2 class="gold-text text-4xl mb-6 italic font-black">Registry</h2>
+            <p class="text-zinc-600 mb-12 text-xs uppercase tracking-[0.4em]">称号をデータベースに登録せよ</p>
+            <input type="text" id="reg-nickname" class="w-full text-center text-xl mb-12 gold-border p-4" placeholder="Nickname">
+            <button id="auth-btn-reg" class="w-full gold-btn py-5 text-xl">ENTER THE LOUNGE</button>
+        </div>
+    </div>
+
+    <!-- [SCREEN 4] ゴージャス掲示板 -->
+    <div id="scr-4" class="screen lounge justify-start overflow-y-auto pt-28">
+        <header class="bg-black/95 border-b border-zinc-900 px-10 py-6 flex justify-between items-center fixed top-0 w-full z-50 shadow-2xl backdrop-blur-md">
+            <h1 id="logo" class="gold-text text-4xl font-black italic cursor-pointer select-none tracking-tighter">THE LOUNGE</h1>
+            <div class="flex items-center gap-3">
+                <span id="user-badge" class="text-[9px] gold-text font-bold border border-zinc-800 px-4 py-1.5 uppercase tracking-widest bg-black shadow-inner"></span>
+            </div>
+        </header>
+
+        <main id="post-feed" class="flex-grow p-10 max-w-4xl mx-auto w-full space-y-16 pb-80">
+            <!-- Feed -->
+        </main>
+
+        <div class="fixed bottom-0 w-full p-8 bg-gradient-to-t from-black via-black/80 to-transparent">
+            <div class="max-w-4xl mx-auto bg-[#080808] p-6 gold-border shadow-2xl relative">
+                <textarea id="post-input" class="w-full h-24 mb-6 text-xl p-4" placeholder="思考を同期する..."></textarea>
+                <div class="flex justify-between items-center">
+                    <label class="gold-text text-[11px] font-black cursor-pointer hover:underline flex items-center gap-2">
+                        📎 ATTACH_MEDIA
+                        <input type="file" id="post-image" accept="image/*" class="hidden">
+                    </label>
+                    <button id="post-submit" class="gold-btn px-16 py-4 text-sm shadow-xl">SYNCHRONIZE</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- [SCREEN 5] 管理ログイン -->
+    <div id="scr-5" class="screen lounge">
+        <div class="w-full max-w-sm p-12 border-4 border-red-900 bg-black text-center shadow-2xl">
+            <h2 class="text-red-600 text-2xl font-black mb-10 tracking-widest uppercase">Admin Auth</h2>
+            <input type="password" id="pw-admin" class="w-full bg-black border-2 border-red-900 p-4 text-red-600 text-center text-2xl mb-10" placeholder="••••••••">
+            <button id="admin-login-btn" class="w-full bg-red-900 text-white font-black py-5 tracking-[0.3em]">AUTHORIZE</button>
+            <button onclick="nav(4)" class="mt-6 text-zinc-700 text-xs hover:underline">Return</button>
+        </div>
+    </div>
+
+    <!-- [SCREEN 6] 管理コンソール -->
+    <div id="scr-6" class="screen bg-[#020202] text-zinc-500 p-12 overflow-y-auto justify-start font-mono text-[11px]">
+        <div class="w-full max-w-6xl mx-auto">
+            <div class="flex justify-between items-center border-b border-zinc-900 pb-8 mb-12">
+                <h2 class="gold-text text-3xl font-black italic tracking-widest uppercase">Overseer Console</h2>
+                <button onclick="nav(4)" class="text-xs gold-text border border-zinc-900 px-6 py-2 hover:bg-white/5 transition-all">EXIT</button>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-16">
+                <div><h3 class="text-red-700 font-black mb-8 underline uppercase tracking-widest">Post Purification</h3><div id="adm-posts" class="space-y-3"></div></div>
+                <div><h3 class="text-blue-700 font-black mb-8 underline uppercase tracking-widest">User Termination</h3><div id="adm-users" class="space-y-3"></div></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 0. SUPABASE 接続設定 ---
+        const SB_URL = "https://ouwdksthlsouvlkqxfqh.supabase.co";
+        const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im91d2Rrc3RobHNvdXZsa3F4ZnFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA5MjA1OTMsImV4cCI6MjA4NjQ5NjU5M30.3RfDDpqJ1bweEtcFO9IZtAeGVWEAwEo-tTH534wDlbk";
+        const sb = window.supabase.createClient(SB_URL, SB_KEY);
+
+        let userName = localStorage.getItem('user_n') || "";
+        let calcVal = "";
+
+        // --- 1. BANチェックシステム ---
+        async function checkBan() {
+            if (!userName) return false;
+            const { data } = await sb.from('posts').select('*').eq('content', '[TERMINATED]').eq('user', userName);
+            if (data && data.length > 0) { nav('ban'); return true; }
+            return false;
+        }
+
+        // --- 2. 画面遷移 (即座に反応) ---
+        function nav(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            const t = document.getElementById('scr-' + id);
+            if(t) t.classList.add('active');
+            if(id === 4) { document.getElementById('user-badge').innerText = userName; syncPosts(); }
+            if(id === 6) renderAdmin();
+            window.scrollTo(0,0);
+        }
+
+        // --- 3. 電卓処理 (物理ボタン保証) ---
+        document.querySelectorAll('.c-btn').forEach(b => {
+            b.onclick = () => {
+                const val = b.getAttribute('data-val');
+                const disp = document.getElementById('calc-disp');
+                if(val === 'C') { calcVal = ""; }
+                else if(val === '=') {
+                    if(calcVal === "777") { calcVal = ""; nav(2); return; }
+                    try { calcVal = eval(calcVal.replace('÷','/').replace('×','*')).toString(); } catch { calcVal = "Error"; }
+                } else { calcVal += val; }
+                disp.innerText = calcVal || "0";
+            };
+        });
+
+        // --- 4. 認証・アカウント ---
+        document.getElementById('auth-btn-neba').onclick = async () => {
+            if(document.getElementById('pw-neba').value === 'neba72') {
+                if (await checkBan()) return;
+                if(userName) nav(4); else nav(3);
+            } else { alert("ACCESS DENIED"); }
+        };
+
+        document.getElementById('auth-btn-reg').onclick = () => {
+            const n = document.getElementById('reg-nickname').value.trim();
+            if(n) { userName = n; localStorage.setItem('user_n', n); nav(4); }
+        };
+
+        // --- 5. 掲示板処理 ---
+        document.getElementById('post-submit').onclick = async () => {
+            if (await checkBan()) return;
+            const txt = document.getElementById('post-input').value;
+            const file = document.getElementById('post-image').files;
+            let b64 = "";
+            if(file) b64 = await new Promise(r => { const rd = new FileReader(); rd.onload = () => r(rd.result); rd.readAsDataURL(file); });
+            
+            if(txt || b64) {
+                const { error } = await sb.from('posts').insert([{ user: userName, content: txt, image: b64 }]);
+                if(!error) { document.getElementById('post-input').value = ""; document.getElementById('post-image').value = ""; syncPosts(); }
+            }
+        };
+
+        async function syncPosts() {
+            const { data } = await sb.from('posts').select('*').neq('content', '[TERMINATED]').order('created_at', { ascending: false });
+            const feed = document.getElementById('post-feed');
+            if(!data) return;
+            feed.innerHTML = data.map(p => `
+                <div class="post-card">
+                    <div class="flex justify-between items-center mb-6 border-b border-zinc-900 pb-2">
+                        <span class="gold-text text-sm font-black italic uppercase tracking-[0.2em]">${p.user}</span>
+                        <span class="text-[9px] text-zinc-700 font-bold">${new Date(p.created_at).toLocaleString()}</span>
+                    </div>
+                    <p class="text-zinc-300 text-lg leading-relaxed font-light mb-6 whitespace-pre-wrap">${p.content || ""}</p>
+                    ${p.image ? `<img src="${p.image}" class="w-full border border-zinc-800 shadow-2xl">` : ''}
+                </div>`).join('');
+        }
+
+        // --- 6. 管理者モード ---
+        document.getElementById('logo').onclick = () => nav(5);
+        document.getElementById('admin-login-btn').onclick = () => {
+            if(document.getElementById('pw-admin').value === 'e9271324') nav(6);
+            else alert("ADMIN_FORBIDDEN");
+        };
+
+        async function renderAdmin() {
+            const { data } = await sb.from('posts').select('*').order('created_at', { ascending: false });
+            if(!data) return;
+            // 投稿管理
+            document.getElementById('adm-posts').innerHTML = data.filter(p=>p.content!=='[TERMINATED]').map(p => `
+                <div class="bg-zinc-950 p-4 border border-zinc-900 flex justify-between items-center text-[10px]">
+                    <span class="truncate max-w-[200px]"><b class="gold-text">${p.user}</b>: ${p.content.slice(0,20)}</span>
+                    <button onclick="purgeP(${p.id})" class="text-red-700 border border-red-900 px-3 py-1 hover:bg-red-900 hover:text-white">PURGE</button>
+                </div>`).join('');
+            // ユーザー管理
+            const uniqueUsers = [...new Set(data.map(p => p.user))];
+            document.getElementById('adm-users').innerHTML = uniqueUsers.map(u => `
+                <div class="bg-zinc-950 p-4 border border-zinc-900 flex justify-between items-center text-[10px]">
+                    <span class="gold-text font-black italic text-sm">${u}</span>
+                    <button onclick="banUser('${u}')" class="text-red-700 border border-red-900 px-3 py-1 hover:bg-red-900 hover:text-white uppercase">Terminate</button>
+                </div>`).join('');
+        }
+
+        window.purgeP = async (id) => { if(confirm("消去？")) { await sb.from('posts').delete().eq('id', id); renderAdmin(); syncPosts(); } };
+        window.banUser = async (u) => { 
+            if(confirm(u + " を追放？")) { 
+                await sb.from('posts').insert([{ user: u, content: '[TERMINATED]' }]);
+                await sb.from('posts').delete().eq('user', u).neq('content', '[TERMINATED]');
+                alert("Executed."); renderAdmin(); 
+            }
+        };
+
+        // 初期BANチェック
+        checkBan();
+    </script>
+</body>
+</html>
